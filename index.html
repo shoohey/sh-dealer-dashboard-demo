@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>セキュリティハウス 代理店管理ダッシュボード</title>
+<style>
+:root {
+  --primary: #1a56db;
+  --primary-light: #e1effe;
+  --danger: #dc2626;
+  --danger-light: #fee2e2;
+  --warning: #f59e0b;
+  --warning-light: #fef3c7;
+  --success: #16a34a;
+  --success-light: #dcfce7;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-500: #6b7280;
+  --gray-700: #374151;
+  --gray-900: #111827;
+  --shadow: 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -2px rgba(0,0,0,.05);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; background: var(--gray-100); color: var(--gray-900); font-size: 14px; }
+
+/* Header */
+.header { background: linear-gradient(135deg, #1e3a5f 0%, #1a56db 100%); color: #fff; padding: 0 24px; height: 60px; display: flex; align-items: center; justify-content: space-between; box-shadow: var(--shadow-lg); position: sticky; top: 0; z-index: 100; }
+.header-left { display: flex; align-items: center; gap: 16px; }
+.header h1 { font-size: 18px; font-weight: 600; letter-spacing: .5px; }
+.header-logo { font-size: 11px; background: rgba(255,255,255,.15); padding: 4px 10px; border-radius: 4px; }
+.header-right { display: flex; align-items: center; gap: 16px; font-size: 13px; }
+.header-right .user-info { display: flex; align-items: center; gap: 8px; }
+.header-right .avatar { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.notification-badge { position: relative; cursor: pointer; font-size: 20px; }
+.notification-badge .count { position: absolute; top: -6px; right: -8px; background: var(--danger); color: #fff; font-size: 10px; padding: 1px 5px; border-radius: 10px; }
+
+/* Layout */
+.layout { display: flex; min-height: calc(100vh - 60px); }
+
+/* Sidebar */
+.sidebar { width: 220px; background: #fff; border-right: 1px solid var(--gray-200); padding: 16px 0; flex-shrink: 0; }
+.sidebar-item { padding: 10px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px; color: var(--gray-700); font-size: 13px; transition: all .15s; }
+.sidebar-item:hover { background: var(--gray-50); }
+.sidebar-item.active { background: var(--primary-light); color: var(--primary); font-weight: 600; border-right: 3px solid var(--primary); }
+.sidebar-section { padding: 12px 20px 6px; font-size: 11px; color: var(--gray-500); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+
+/* Main */
+.main { flex: 1; padding: 24px; overflow-y: auto; }
+
+/* Page sections */
+.page { display: none; }
+.page.active { display: block; }
+
+/* Cards */
+.card { background: #fff; border-radius: 8px; box-shadow: var(--shadow); padding: 20px; margin-bottom: 20px; }
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.card-title { font-size: 15px; font-weight: 600; color: var(--gray-900); }
+
+/* KPI Row */
+.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.kpi-card { background: #fff; border-radius: 8px; box-shadow: var(--shadow); padding: 20px; }
+.kpi-label { font-size: 12px; color: var(--gray-500); margin-bottom: 4px; }
+.kpi-value { font-size: 28px; font-weight: 700; }
+.kpi-change { font-size: 12px; margin-top: 4px; }
+.kpi-change.up { color: var(--success); }
+.kpi-change.down { color: var(--danger); }
+.kpi-icon { font-size: 24px; }
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; padding: 10px 12px; font-size: 12px; color: var(--gray-500); border-bottom: 2px solid var(--gray-200); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+td { padding: 12px; border-bottom: 1px solid var(--gray-100); font-size: 13px; }
+tr:hover { background: var(--gray-50); }
+
+/* Badges */
+.badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+.badge-success { background: var(--success-light); color: var(--success); }
+.badge-warning { background: var(--warning-light); color: #92400e; }
+.badge-danger { background: var(--danger-light); color: var(--danger); }
+.badge-info { background: var(--primary-light); color: var(--primary); }
+
+/* Progress bar */
+.progress-bar { background: var(--gray-200); border-radius: 4px; height: 8px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 4px; transition: width .3s; }
+
+/* Grid layouts */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+/* Charts (simple CSS-based) */
+.bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 200px; padding: 10px 0; }
+.bar-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.bar { border-radius: 4px 4px 0 0; width: 100%; min-width: 30px; transition: height .5s ease; }
+.bar-label { font-size: 10px; color: var(--gray-500); writing-mode: vertical-rl; text-orientation: mixed; max-height: 60px; overflow: hidden; }
+.bar-value { font-size: 11px; font-weight: 600; }
+
+/* Donut chart */
+.donut-container { display: flex; align-items: center; gap: 24px; }
+.donut { width: 120px; height: 120px; border-radius: 50%; position: relative; }
+.donut-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); background: #fff; width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; }
+.donut-legend { display: flex; flex-direction: column; gap: 8px; }
+.legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+/* Activity timeline */
+.timeline { position: relative; padding-left: 24px; }
+.timeline::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: var(--gray-200); }
+.timeline-item { position: relative; padding-bottom: 16px; }
+.timeline-item::before { content: ''; position: absolute; left: -20px; top: 4px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid; background: #fff; }
+.timeline-item.visit::before { border-color: var(--primary); }
+.timeline-item.report::before { border-color: var(--success); }
+.timeline-item.alert::before { border-color: var(--danger); }
+.timeline-time { font-size: 11px; color: var(--gray-500); }
+.timeline-content { font-size: 13px; margin-top: 2px; }
+
+/* Map placeholder */
+.japan-map { position: relative; width: 100%; height: 420px; background: linear-gradient(180deg, #e8f0fe 0%, #dbeafe 100%); border-radius: 8px; overflow: hidden; }
+.map-dot { position: absolute; width: 14px; height: 14px; border-radius: 50%; cursor: pointer; transition: transform .2s; z-index: 2; }
+.map-dot:hover { transform: scale(1.8); z-index: 10; }
+.map-dot .tooltip { display: none; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--gray-900); color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 11px; white-space: nowrap; z-index: 20; }
+.map-dot:hover .tooltip { display: block; }
+.map-region { position: absolute; font-size: 10px; color: var(--gray-500); font-weight: 600; }
+
+/* Issue cards */
+.issue-card { border-left: 4px solid; padding: 12px 16px; margin-bottom: 12px; border-radius: 0 8px 8px 0; background: #fff; box-shadow: var(--shadow); }
+.issue-card.critical { border-color: var(--danger); }
+.issue-card.warning { border-color: var(--warning); }
+.issue-card.info { border-color: var(--primary); }
+.issue-title { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+.issue-meta { font-size: 11px; color: var(--gray-500); }
+
+/* Tabs */
+.tabs { display: flex; gap: 0; border-bottom: 2px solid var(--gray-200); margin-bottom: 16px; }
+.tab { padding: 8px 20px; cursor: pointer; font-size: 13px; color: var(--gray-500); border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .15s; }
+.tab:hover { color: var(--gray-700); }
+.tab.active { color: var(--primary); border-color: var(--primary); font-weight: 600; }
+
+/* Filter bar */
+.filter-bar { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; }
+.filter-bar select, .filter-bar input { padding: 8px 12px; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 13px; background: #fff; }
+.btn { padding: 8px 16px; border-radius: 6px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: #1e40af; }
+.btn-outline { background: #fff; color: var(--gray-700); border: 1px solid var(--gray-300); }
+
+/* AI Insights panel */
+.ai-panel { background: linear-gradient(135deg, #f0f5ff 0%, #e8f0fe 100%); border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; margin-bottom: 20px; }
+.ai-panel-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-weight: 600; color: var(--primary); font-size: 14px; }
+.ai-insight { padding: 8px 12px; background: #fff; border-radius: 6px; margin-bottom: 8px; font-size: 13px; border-left: 3px solid var(--primary); }
+
+/* Dealer detail modal */
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.4); z-index: 200; align-items: center; justify-content: center; }
+.modal-overlay.show { display: flex; }
+.modal { background: #fff; border-radius: 12px; width: 700px; max-height: 80vh; overflow-y: auto; padding: 24px; box-shadow: var(--shadow-lg); }
+.modal-close { float: right; cursor: pointer; font-size: 20px; color: var(--gray-500); background: none; border: none; }
+
+/* Responsive */
+@media (max-width: 1200px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 768px) { .sidebar { display: none; } .grid-2, .grid-3 { grid-template-columns: 1fr; } .kpi-row { grid-template-columns: 1fr; } }
+
+/* Animations */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.page.active { animation: fadeIn .3s ease; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <h1>SH 代理店管理ダッシュボード</h1>
+    <span class="header-logo">Security House Network</span>
+  </div>
+  <div class="header-right">
+    <div class="notification-badge" onclick="showPage('alerts')">
+      🔔<span class="count">5</span>
+    </div>
+    <div class="user-info">
+      <div class="avatar">田</div>
+      <div>
+        <div style="font-size:13px;font-weight:600;">田中 太郎</div>
+        <div style="font-size:11px;opacity:.7;">関東エリア担当</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-section">メイン</div>
+    <div class="sidebar-item active" onclick="showPage('dashboard')">📊 ダッシュボード</div>
+    <div class="sidebar-item" onclick="showPage('map')">🗾 エリアマップ</div>
+    <div class="sidebar-item" onclick="showPage('sales')">💰 売上管理</div>
+    <div class="sidebar-section">管理</div>
+    <div class="sidebar-item" onclick="showPage('dealers')">🏢 代理店一覧</div>
+    <div class="sidebar-item" onclick="showPage('activities')">📋 活動管理</div>
+    <div class="sidebar-item" onclick="showPage('instructions')">📌 本部指示</div>
+    <div class="sidebar-section">分析</div>
+    <div class="sidebar-item" onclick="showPage('issues')">⚠️ 課題・リスク</div>
+    <div class="sidebar-item" onclick="showPage('alerts')">🔔 アラート</div>
+    <div class="sidebar-item" onclick="showPage('ai')">🤖 AI分析</div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main">
+
+    <!-- ========== Dashboard ========== -->
+    <div class="page active" id="page-dashboard">
+      <div class="ai-panel">
+        <div class="ai-panel-header">🤖 AI インサイト（本日のサマリー）</div>
+        <div class="ai-insight">📍 <strong>北海道エリア</strong>の札幌SHで納期遅延リスクを検知。プロジェクトX-42の進捗が計画比15%遅延しています。</div>
+        <div class="ai-insight">👴 <strong>九州エリア</strong>の熊本SHで後継者問題が深刻化。代表の年齢が72歳、後継候補が未定です。早期対応を推奨。</div>
+        <div class="ai-insight">📈 <strong>関東エリア</strong>の今月売上が前年同月比 +23% と好調。横浜SHの大型案件成約が貢献。</div>
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-label">今月売上（全国）</div>
+          <div class="kpi-value" style="color:var(--primary);">¥2.84億</div>
+          <div class="kpi-change up">▲ 12.3% 前月比</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">代理店数</div>
+          <div class="kpi-value">136</div>
+          <div class="kpi-change">全国セキュリティハウス</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">本部指示 遵守率</div>
+          <div class="kpi-value" style="color:var(--success);">87%</div>
+          <div class="kpi-change up">▲ 3.2pt 前月比</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">要対応アラート</div>
+          <div class="kpi-value" style="color:var(--danger);">5</div>
+          <div class="kpi-change down">▼ 2件増加</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">エリア別 月間売上</div>
+            <select style="padding:4px 8px;border:1px solid var(--gray-300);border-radius:4px;font-size:12px;">
+              <option>2026年3月</option><option>2026年2月</option><option>2026年1月</option>
+            </select>
+          </div>
+          <div class="bar-chart">
+            <div class="bar-item"><div class="bar-value">5,200</div><div class="bar" style="height:65%;background:var(--primary);"></div><div class="bar-label">北海道</div></div>
+            <div class="bar-item"><div class="bar-value">4,100</div><div class="bar" style="height:51%;background:var(--primary);"></div><div class="bar-label">東北</div></div>
+            <div class="bar-item"><div class="bar-value">8,400</div><div class="bar" style="height:100%;background:var(--primary);opacity:.9;"></div><div class="bar-label">関東</div></div>
+            <div class="bar-item"><div class="bar-value">3,200</div><div class="bar" style="height:38%;background:var(--primary);"></div><div class="bar-label">北陸</div></div>
+            <div class="bar-item"><div class="bar-value">4,800</div><div class="bar" style="height:57%;background:var(--primary);"></div><div class="bar-label">中部</div></div>
+            <div class="bar-item"><div class="bar-value">6,500</div><div class="bar" style="height:77%;background:var(--primary);"></div><div class="bar-label">関西</div></div>
+            <div class="bar-item"><div class="bar-value">2,800</div><div class="bar" style="height:33%;background:var(--primary);"></div><div class="bar-label">中国</div></div>
+            <div class="bar-item"><div class="bar-value">2,100</div><div class="bar" style="height:25%;background:var(--primary);"></div><div class="bar-label">四国</div></div>
+            <div class="bar-item"><div class="bar-value">3,900</div><div class="bar" style="height:46%;background:var(--primary);"></div><div class="bar-label">九州</div></div>
+          </div>
+          <div style="text-align:center;font-size:11px;color:var(--gray-500);margin-top:4px;">単位: 万円</div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">本部指示 遵守状況</div>
+          </div>
+          <div class="donut-container">
+            <div class="donut" style="background:conic-gradient(var(--success) 0% 62%, var(--warning) 62% 87%, var(--danger) 87% 100%);">
+              <div class="donut-center">87%</div>
+            </div>
+            <div class="donut-legend">
+              <div class="legend-item"><div class="legend-dot" style="background:var(--success);"></div>完了済み（62%）</div>
+              <div class="legend-item"><div class="legend-dot" style="background:var(--warning);"></div>対応中（25%）</div>
+              <div class="legend-item"><div class="legend-dot" style="background:var(--danger);"></div>未着手（13%）</div>
+            </div>
+          </div>
+          <div style="margin-top:16px;">
+            <table>
+              <tr><td>春季キャンペーン展開</td><td><span class="badge badge-success">完了</span></td><td style="text-align:right;">124/136店</td></tr>
+              <tr><td>新商品研修実施</td><td><span class="badge badge-warning">対応中</span></td><td style="text-align:right;">98/136店</td></tr>
+              <tr><td>顧客DB更新</td><td><span class="badge badge-danger">遅延</span></td><td style="text-align:right;">52/136店</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><div class="card-title">直近の活動ログ</div></div>
+          <div class="timeline">
+            <div class="timeline-item visit">
+              <div class="timeline-time">今日 14:30</div>
+              <div class="timeline-content"><strong>田中</strong>が <strong>横浜SH</strong> を訪問 — 大型案件のフォローアップ</div>
+            </div>
+            <div class="timeline-item report">
+              <div class="timeline-time">今日 11:00</div>
+              <div class="timeline-content"><strong>佐藤</strong>が <strong>名古屋SH</strong> 月次レポートを提出</div>
+            </div>
+            <div class="timeline-item alert">
+              <div class="timeline-time">昨日 17:45</div>
+              <div class="timeline-content"><strong>AI検知:</strong> 札幌SH プロジェクトX-42 納期リスク</div>
+            </div>
+            <div class="timeline-item visit">
+              <div class="timeline-time">昨日 10:00</div>
+              <div class="timeline-content"><strong>鈴木</strong>が <strong>大阪SH</strong> を訪問 — 新商品研修実施</div>
+            </div>
+            <div class="timeline-item report">
+              <div class="timeline-time">3/15 16:00</div>
+              <div class="timeline-content"><strong>山田</strong>が <strong>福岡SH</strong> の課題レポートを提出</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title">要注意代理店</div></div>
+          <div class="issue-card critical">
+            <div class="issue-title">熊本セキュリティハウス — 後継者問題</div>
+            <div class="issue-meta">代表 72歳 / 後継候補未定 / 売上は安定だが事業継続リスク高</div>
+          </div>
+          <div class="issue-card critical">
+            <div class="issue-title">札幌セキュリティハウス — 納期遅延</div>
+            <div class="issue-meta">プロジェクトX-42 計画比15%遅延 / 顧客クレームリスクあり</div>
+          </div>
+          <div class="issue-card warning">
+            <div class="issue-title">仙台セキュリティハウス — 売上減少</div>
+            <div class="issue-meta">3ヶ月連続で前年比マイナス / 主要顧客の離脱懸念</div>
+          </div>
+          <div class="issue-card info">
+            <div class="issue-title">広島セキュリティハウス — 人材不足</div>
+            <div class="issue-meta">技術者2名退職予定 / 施工能力の低下懸念</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== Area Map ========== -->
+    <div class="page" id="page-map">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">全国セキュリティハウス マップ</div>
+          <div style="display:flex;gap:12px;align-items:center;font-size:12px;">
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--success);"></span> 好調</span>
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--warning);"></span> 注意</span>
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--danger);"></span> 要対応</span>
+          </div>
+        </div>
+        <div class="japan-map" id="japanMap">
+          <!-- Japan outline SVG simplified -->
+          <svg viewBox="0 0 600 500" style="width:100%;height:100%;opacity:.15;position:absolute;">
+            <path d="M420,60 Q440,50 460,70 Q480,90 470,120 Q460,140 450,160 L440,180 Q430,200 420,210 Q410,230 400,240 L390,260 Q380,280 370,290 Q360,310 350,320 L340,340 Q330,350 320,360 Q310,370 300,375 L290,380 Q280,385 270,380 Q260,370 250,360 L240,350 Q230,340 235,320 Q240,300 250,280 L260,260 Q270,250 280,240 L290,220 Q300,200 310,190 Q320,180 330,170 L350,150 Q360,140 370,120 Q380,100 390,80 Z" fill="#1a56db"/>
+            <path d="M200,280 Q220,270 240,280 Q260,290 250,310 Q240,330 220,340 Q200,350 190,330 Q180,310 200,280 Z" fill="#1a56db"/>
+            <path d="M170,320 Q190,310 210,320 Q220,340 210,360 Q200,380 180,370 Q160,360 170,320 Z" fill="#1a56db"/>
+            <path d="M280,380 Q300,370 320,380 Q340,400 320,420 Q300,430 280,420 Q260,410 280,380 Z" fill="#1a56db"/>
+          </svg>
+          <!-- Map dots - positioned to approximate Japan geography -->
+          <!-- Hokkaido -->
+          <div class="map-dot" style="top:12%;left:72%;background:var(--danger);" onclick="openDealer('sapporo')"><div class="tooltip">札幌SH ⚠️ 納期遅延<br>売上: ¥2,800万</div></div>
+          <div class="map-dot" style="top:18%;left:68%;background:var(--success);"><div class="tooltip">旭川SH<br>売上: ¥1,400万</div></div>
+          <!-- Tohoku -->
+          <div class="map-dot" style="top:28%;left:65%;background:var(--warning);"><div class="tooltip">仙台SH ⚠️ 売上減少<br>売上: ¥1,900万</div></div>
+          <div class="map-dot" style="top:32%;left:62%;background:var(--success);"><div class="tooltip">山形SH<br>売上: ¥1,100万</div></div>
+          <!-- Kanto -->
+          <div class="map-dot" style="top:42%;left:62%;background:var(--success);width:18px;height:18px;"><div class="tooltip">東京SH（本部）<br>売上: ¥3,500万</div></div>
+          <div class="map-dot" style="top:44%;left:58%;background:var(--success);"><div class="tooltip">横浜SH 📈 好調<br>売上: ¥2,800万</div></div>
+          <div class="map-dot" style="top:39%;left:60%;background:var(--success);"><div class="tooltip">さいたまSH<br>売上: ¥1,600万</div></div>
+          <div class="map-dot" style="top:41%;left:64%;background:var(--success);"><div class="tooltip">千葉SH<br>売上: ¥1,200万</div></div>
+          <!-- Chubu -->
+          <div class="map-dot" style="top:46%;left:52%;background:var(--success);"><div class="tooltip">名古屋SH<br>売上: ¥2,400万</div></div>
+          <div class="map-dot" style="top:42%;left:48%;background:var(--success);"><div class="tooltip">金沢SH<br>売上: ¥980万</div></div>
+          <div class="map-dot" style="top:44%;left:54%;background:var(--success);"><div class="tooltip">静岡SH<br>売上: ¥1,300万</div></div>
+          <!-- Kansai -->
+          <div class="map-dot" style="top:52%;left:44%;background:var(--success);width:16px;height:16px;"><div class="tooltip">大阪SH<br>売上: ¥3,200万</div></div>
+          <div class="map-dot" style="top:50%;left:42%;background:var(--success);"><div class="tooltip">京都SH<br>売上: ¥1,800万</div></div>
+          <div class="map-dot" style="top:54%;left:40%;background:var(--success);"><div class="tooltip">神戸SH<br>売上: ¥1,500万</div></div>
+          <!-- Chugoku -->
+          <div class="map-dot" style="top:56%;left:32%;background:var(--warning);"><div class="tooltip">広島SH ⚠️ 人材不足<br>売上: ¥1,400万</div></div>
+          <div class="map-dot" style="top:54%;left:28%;background:var(--success);"><div class="tooltip">岡山SH<br>売上: ¥1,100万</div></div>
+          <!-- Shikoku -->
+          <div class="map-dot" style="top:62%;left:34%;background:var(--success);"><div class="tooltip">高松SH<br>売上: ¥900万</div></div>
+          <div class="map-dot" style="top:64%;left:30%;background:var(--success);"><div class="tooltip">松山SH<br>売上: ¥850万</div></div>
+          <!-- Kyushu -->
+          <div class="map-dot" style="top:66%;left:22%;background:var(--success);"><div class="tooltip">福岡SH<br>売上: ¥2,100万</div></div>
+          <div class="map-dot" style="top:72%;left:24%;background:var(--danger);"><div class="tooltip">熊本SH ⚠️ 後継者問題<br>売上: ¥1,200万</div></div>
+          <div class="map-dot" style="top:76%;left:20%;background:var(--success);"><div class="tooltip">鹿児島SH<br>売上: ¥780万</div></div>
+          <!-- Labels -->
+          <div class="map-region" style="top:8%;left:72%;">北海道</div>
+          <div class="map-region" style="top:26%;left:58%;">東北</div>
+          <div class="map-region" style="top:38%;left:65%;">関東</div>
+          <div class="map-region" style="top:44%;left:46%;">中部</div>
+          <div class="map-region" style="top:48%;left:38%;">関西</div>
+          <div class="map-region" style="top:52%;left:25%;">中国</div>
+          <div class="map-region" style="top:60%;left:28%;">四国</div>
+          <div class="map-region" style="top:68%;left:16%;">九州</div>
+        </div>
+      </div>
+
+      <div class="grid-3" style="margin-top:20px;">
+        <div class="card" style="text-align:center;">
+          <div style="font-size:32px;font-weight:700;color:var(--success);">18</div>
+          <div style="font-size:12px;color:var(--gray-500);">好調な代理店</div>
+        </div>
+        <div class="card" style="text-align:center;">
+          <div style="font-size:32px;font-weight:700;color:var(--warning);">3</div>
+          <div style="font-size:12px;color:var(--gray-500);">注意が必要</div>
+        </div>
+        <div class="card" style="text-align:center;">
+          <div style="font-size:32px;font-weight:700;color:var(--danger);">2</div>
+          <div style="font-size:12px;color:var(--gray-500);">要対応</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== Sales ========== -->
+    <div class="page" id="page-sales">
+      <div class="filter-bar">
+        <select id="salesPeriod">
+          <option>2026年3月</option><option>2026年2月</option><option>2026年1月</option><option>2025年度通期</option>
+        </select>
+        <select id="salesArea">
+          <option>全エリア</option><option>北海道</option><option>東北</option><option>関東</option><option>中部</option><option>関西</option><option>中国</option><option>四国</option><option>九州</option>
+        </select>
+        <button class="btn btn-primary">表示更新</button>
+        <button class="btn btn-outline">CSV出力</button>
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-label">月間売上</div>
+          <div class="kpi-value" style="color:var(--primary);">¥2.84億</div>
+          <div class="kpi-change up">▲ 12.3%</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">目標達成率</div>
+          <div class="kpi-value" style="color:var(--success);">94.7%</div>
+          <div class="kpi-change">目標: ¥3.0億</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">新規案件数</div>
+          <div class="kpi-value">47</div>
+          <div class="kpi-change up">▲ 8件</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">平均案件単価</div>
+          <div class="kpi-value">¥604万</div>
+          <div class="kpi-change up">▲ 5.2%</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">代理店別 売上ランキング（上位15）</div></div>
+        <table>
+          <thead>
+            <tr><th>#</th><th>代理店名</th><th>エリア</th><th>今月売上</th><th>前月比</th><th>目標達成率</th><th>進捗</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td><strong>東京SH</strong></td><td>関東</td><td>¥3,500万</td><td class="up" style="color:var(--success);">+15%</td><td>108%</td><td><div class="progress-bar" style="width:120px;"><div class="progress-fill" style="width:100%;background:var(--success);"></div></div></td></tr>
+            <tr><td>2</td><td><strong>大阪SH</strong></td><td>関西</td><td>¥3,200万</td><td class="up" style="color:var(--success);">+8%</td><td>102%</td><td><div class="progress-bar" style="width:120px;"><div class="progress-fill" style="width:100%;background:var(--success);"></div></div></td></tr>
+            <tr><td>3</td><td><strong>横浜SH</strong></td><td>関東</td><td>¥2,800万</td><td class="up" style="color:var(--success);">+23%</td><td>112%</td><td><div class="progress-bar" style="width:120px;"><div class="progress-fill" style="width:100%;background:var(--success);"></div></div></td></tr>
+            <tr><td>4</td><td><strong>札幌SH</strong></td><td>北海道</td><td>¥2,800万</td><td style="color:var(--danger);">-3%</td><td>88%</td><td><div class="progress-bar" style="width:120px;"><div class="progress-fill" style="width:88%;background:var(--warning);"></div></div></td></tr>
+            <tr><td>5</td><td><strong>名古屋SH</strong></td><td>中部</td><td>¥2,400万</td><td class="up" style="color:var(--success);">+5%</td><td>96%</td><td><div class="progress-bar" style="width:120px;"><div class="progress-fill" style="width:96%;background:var(--primary);"></div></div></td></tr>
+            <tr><td>6</td><td><strong>福岡SH</strong></td><td>九州</td><td>¥2,100万</td><td class="up" style="color:var(--success);">+11%</td><td>105%</td><td><div class="progress-bar" style="width:120px;"><div class="progress-fill" style="width:100%;background:var(--success);"></div></div></td></tr>
+            <tr><td>7</td><td><strong>仙台SH</strong></td><td>東北</td><td>¥1,900万</td><td style="color:var(--danger);">-12%</td><td>76%</td><td><div class="progress-bar" style="width:120px;"><div class="progress-fill" style="width:76%;background:var(--danger);"></div></div></td></tr>
+            <tr><td>8</td><td><strong>京都SH</strong></td><td>関西</td><td>¥1,800万</td><td class="up" style="color:var(--success);">+7%</td><td>100%</td><td><div class="progress-bar" style="width:120px;"><div class="progress-fill" style="width:100%;background:var(--success);"></div></div></td></tr>
+            <tr><td>9</td><td><strong>さいたまSH</strong></td><td>関東</td><td>¥1,600万</td><td class="up" style="color:var(--success);">+4%</td><td>94%</td><td><div class="progress-bar" style="width:120px;"><div class="progress-fill" style="width:94%;background:var(--primary);"></div></div></td></tr>
+            <tr><td>10</td><td><strong>神戸SH</strong></td><td>関西</td><td>¥1,500万</td><td class="up" style="color:var(--success);">+9%</td><td>100%</td><td><div class="progress-bar" style="width:120px;"><div class="progress-fill" style="width:100%;background:var(--success);"></div></div></td></tr>
+            <tr><td>11</td><td><strong>旭川SH</strong></td><td>北海道</td><td>¥1,400万</td><td class="up" style="color:var(--success);">+2%</td><td>93%</td><td><div class="progress-bar" style="width:120px;"><div class="progress-fill" style="width:93%;background:var(--primary);"></div></div></td></tr>
+            <tr><td>12</td><td><strong>広島SH</strong></td><td>中国</td><td>¥1,400万</td><td style="color:var(--danger);">-5%</td><td>82%</td><td><div class="progress-bar" style="width:120px;"><div class="progress-fill" style="width:82%;background:var(--warning);"></div></div></td></tr>
+            <tr><td>13</td><td><strong>静岡SH</strong></td><td>中部</td><td>¥1,300万</td><td class="up" style="color:var(--success);">+6%</td><td>98%</td><td><div class="progress-bar" style="width:120px;"><div class="progress-fill" style="width:98%;background:var(--primary);"></div></div></td></tr>
+            <tr><td>14</td><td><strong>熊本SH</strong></td><td>九州</td><td>¥1,200万</td><td class="up" style="color:var(--success);">+1%</td><td>92%</td><td><div class="progress-bar" style="width:120px;"><div class="progress-fill" style="width:92%;background:var(--primary);"></div></div></td></tr>
+            <tr><td>15</td><td><strong>千葉SH</strong></td><td>関東</td><td>¥1,200万</td><td class="up" style="color:var(--success);">+10%</td><td>100%</td><td><div class="progress-bar" style="width:120px;"><div class="progress-fill" style="width:100%;background:var(--success);"></div></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ========== Dealers ========== -->
+    <div class="page" id="page-dealers">
+      <div class="filter-bar">
+        <input type="text" placeholder="代理店名で検索..." style="width:200px;">
+        <select><option>全エリア</option><option>北海道</option><option>東北</option><option>関東</option><option>中部</option><option>関西</option><option>中国</option><option>四国</option><option>九州</option></select>
+        <select><option>全ステータス</option><option>好調</option><option>注意</option><option>要対応</option></select>
+        <button class="btn btn-primary">検索</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">代理店一覧</div><span style="font-size:12px;color:var(--gray-500);">全136件中 主要23件を表示</span></div>
+        <table>
+          <thead>
+            <tr><th>代理店名</th><th>エリア</th><th>代表者</th><th>代表年齢</th><th>売上</th><th>ステータス</th><th>課題</th><th>詳細</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>札幌セキュリティハウス</strong></td><td>北海道</td><td>北野 一郎</td><td>58歳</td><td>¥2,800万</td><td><span class="badge badge-danger">要対応</span></td><td>納期遅延</td><td><button class="btn btn-outline" style="padding:4px 8px;font-size:11px;" onclick="openDealer('sapporo')">詳細</button></td></tr>
+            <tr><td><strong>旭川セキュリティハウス</strong></td><td>北海道</td><td>山口 健太</td><td>45歳</td><td>¥1,400万</td><td><span class="badge badge-success">好調</span></td><td>—</td><td><button class="btn btn-outline" style="padding:4px 8px;font-size:11px;">詳細</button></td></tr>
+            <tr><td><strong>仙台セキュリティハウス</strong></td><td>東北</td><td>伊藤 大輔</td><td>52歳</td><td>¥1,900万</td><td><span class="badge badge-warning">注意</span></td><td>売上減少</td><td><button class="btn btn-outline" style="padding:4px 8px;font-size:11px;">詳細</button></td></tr>
+            <tr><td><strong>東京セキュリティハウス</strong></td><td>関東</td><td>高橋 修</td><td>48歳</td><td>¥3,500万</td><td><span class="badge badge-success">好調</span></td><td>—</td><td><button class="btn btn-outline" style="padding:4px 8px;font-size:11px;">詳細</button></td></tr>
+            <tr><td><strong>横浜セキュリティハウス</strong></td><td>関東</td><td>渡辺 裕子</td><td>43歳</td><td>¥2,800万</td><td><span class="badge badge-success">好調</span></td><td>—</td><td><button class="btn btn-outline" style="padding:4px 8px;font-size:11px;">詳細</button></td></tr>
+            <tr><td><strong>さいたまセキュリティハウス</strong></td><td>関東</td><td>小林 誠</td><td>55歳</td><td>¥1,600万</td><td><span class="badge badge-success">好調</span></td><td>—</td><td><button class="btn btn-outline" style="padding:4px 8px;font-size:11px;">詳細</button></td></tr>
+            <tr><td><strong>千葉セキュリティハウス</strong></td><td>関東</td><td>中村 浩二</td><td>50歳</td><td>¥1,200万</td><td><span class="badge badge-success">好調</span></td><td>—</td><td><button class="btn btn-outline" style="padding:4px 8px;font-size:11px;">詳細</button></td></tr>
+            <tr><td><strong>名古屋セキュリティハウス</strong></td><td>中部</td><td>加藤 剛</td><td>47歳</td><td>¥2,400万</td><td><span class="badge badge-success">好調</span></td><td>—</td><td><button class="btn btn-outline" style="padding:4px 8px;font-size:11px;">詳細</button></td></tr>
+            <tr><td><strong>金沢セキュリティハウス</strong></td><td>北陸</td><td>藤田 隆</td><td>61歳</td><td>¥980万</td><td><span class="badge badge-success">好調</span></td><td>—</td><td><button class="btn btn-outline" style="padding:4px 8px;font-size:11px;">詳細</button></td></tr>
+            <tr><td><strong>大阪セキュリティハウス</strong></td><td>関西</td><td>松本 直樹</td><td>51歳</td><td>¥3,200万</td><td><span class="badge badge-success">好調</span></td><td>—</td><td><button class="btn btn-outline" style="padding:4px 8px;font-size:11px;">詳細</button></td></tr>
+            <tr><td><strong>京都セキュリティハウス</strong></td><td>関西</td><td>井上 亮</td><td>49歳</td><td>¥1,800万</td><td><span class="badge badge-success">好調</span></td><td>—</td><td><button class="btn btn-outline" style="padding:4px 8px;font-size:11px;">詳細</button></td></tr>
+            <tr><td><strong>広島セキュリティハウス</strong></td><td>中国</td><td>木村 正人</td><td>56歳</td><td>¥1,400万</td><td><span class="badge badge-warning">注意</span></td><td>人材不足</td><td><button class="btn btn-outline" style="padding:4px 8px;font-size:11px;">詳細</button></td></tr>
+            <tr><td><strong>熊本セキュリティハウス</strong></td><td>九州</td><td>田村 義男</td><td>72歳</td><td>¥1,200万</td><td><span class="badge badge-danger">要対応</span></td><td>後継者問題</td><td><button class="btn btn-outline" style="padding:4px 8px;font-size:11px;" onclick="openDealer('kumamoto')">詳細</button></td></tr>
+            <tr><td><strong>福岡セキュリティハウス</strong></td><td>九州</td><td>原田 隆志</td><td>44歳</td><td>¥2,100万</td><td><span class="badge badge-success">好調</span></td><td>—</td><td><button class="btn btn-outline" style="padding:4px 8px;font-size:11px;">詳細</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ========== Activities ========== -->
+    <div class="page" id="page-activities">
+      <div class="filter-bar">
+        <select><option>全担当者</option><option>田中 太郎</option><option>佐藤 花子</option><option>鈴木 一郎</option><option>山田 美紀</option></select>
+        <select><option>全活動種別</option><option>訪問</option><option>電話</option><option>メール</option><option>研修</option><option>報告書提出</option></select>
+        <input type="date" value="2026-03-01"> 〜 <input type="date" value="2026-03-17">
+        <button class="btn btn-primary">検索</button>
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-label">今月の訪問回数</div>
+          <div class="kpi-value">42</div>
+          <div class="kpi-change">目標: 50回</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">報告書提出率</div>
+          <div class="kpi-value" style="color:var(--success);">92%</div>
+          <div class="kpi-change up">▲ 5pt</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">平均レスポンス時間</div>
+          <div class="kpi-value">4.2h</div>
+          <div class="kpi-change up">▲ 改善</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">指示完了タスク</div>
+          <div class="kpi-value">28/32</div>
+          <div class="kpi-change">遵守率: 87%</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">営業担当者 活動実績</div></div>
+        <table>
+          <thead>
+            <tr><th>担当者</th><th>エリア</th><th>訪問数</th><th>電話</th><th>報告書</th><th>指示遵守率</th><th>評価</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>田中 太郎</strong></td><td>関東</td><td>14</td><td>28</td><td>12/14</td><td><span class="badge badge-success">95%</span></td><td>⭐⭐⭐⭐⭐</td></tr>
+            <tr><td><strong>佐藤 花子</strong></td><td>中部・関西</td><td>12</td><td>35</td><td>10/12</td><td><span class="badge badge-success">92%</span></td><td>⭐⭐⭐⭐⭐</td></tr>
+            <tr><td><strong>鈴木 一郎</strong></td><td>北海道・東北</td><td>9</td><td>22</td><td>8/10</td><td><span class="badge badge-warning">78%</span></td><td>⭐⭐⭐⭐</td></tr>
+            <tr><td><strong>山田 美紀</strong></td><td>中国・四国・九州</td><td>7</td><td>18</td><td>6/8</td><td><span class="badge badge-warning">82%</span></td><td>⭐⭐⭐⭐</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">直近の活動詳細</div></div>
+        <table>
+          <thead>
+            <tr><th>日時</th><th>担当者</th><th>種別</th><th>代理店</th><th>内容</th><th>ステータス</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>3/17 14:30</td><td>田中</td><td><span class="badge badge-info">訪問</span></td><td>横浜SH</td><td>大型案件フォローアップ / 追加提案実施</td><td><span class="badge badge-success">完了</span></td></tr>
+            <tr><td>3/17 11:00</td><td>佐藤</td><td><span class="badge badge-info">報告</span></td><td>名古屋SH</td><td>月次レポート提出 / 売上好調報告</td><td><span class="badge badge-success">完了</span></td></tr>
+            <tr><td>3/16 15:00</td><td>鈴木</td><td><span class="badge badge-info">電話</span></td><td>札幌SH</td><td>プロジェクトX-42 進捗確認 / 遅延対策協議</td><td><span class="badge badge-warning">対応中</span></td></tr>
+            <tr><td>3/16 10:00</td><td>佐藤</td><td><span class="badge badge-info">訪問</span></td><td>大阪SH</td><td>新商品研修実施 / 展示コーナー設置確認</td><td><span class="badge badge-success">完了</span></td></tr>
+            <tr><td>3/15 16:00</td><td>山田</td><td><span class="badge badge-info">報告</span></td><td>福岡SH</td><td>課題レポート提出 / 熊本SH後継者問題も報告</td><td><span class="badge badge-success">完了</span></td></tr>
+            <tr><td>3/15 13:00</td><td>田中</td><td><span class="badge badge-info">訪問</span></td><td>さいたまSH</td><td>春季キャンペーン最終確認</td><td><span class="badge badge-success">完了</span></td></tr>
+            <tr><td>3/14 14:00</td><td>鈴木</td><td><span class="badge badge-info">訪問</span></td><td>仙台SH</td><td>売上減少の原因ヒアリング / 改善案検討</td><td><span class="badge badge-warning">対応中</span></td></tr>
+            <tr><td>3/14 10:00</td><td>山田</td><td><span class="badge badge-info">訪問</span></td><td>広島SH</td><td>人材不足対策ヒアリング / 本部支援検討</td><td><span class="badge badge-warning">対応中</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ========== HQ Instructions ========== -->
+    <div class="page" id="page-instructions">
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab(this,'current')">進行中の指示</div>
+        <div class="tab" onclick="switchTab(this,'completed')">完了済み</div>
+        <div class="tab" onclick="switchTab(this,'upcoming')">今後の予定</div>
+      </div>
+
+      <div class="card">
+        <table>
+          <thead>
+            <tr><th>指示内容</th><th>発令日</th><th>期限</th><th>対象</th><th>完了率</th><th>進捗</th><th>ステータス</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>春季防犯キャンペーン展開</strong><br><span style="font-size:11px;color:var(--gray-500);">新チラシ配布・店頭POP設置・SNS発信</span></td>
+              <td>3/1</td><td>3/20</td><td>全136店</td>
+              <td>91%</td>
+              <td><div class="progress-bar" style="width:150px;"><div class="progress-fill" style="width:91%;background:var(--success);"></div></div></td>
+              <td><span class="badge badge-success">順調</span></td>
+            </tr>
+            <tr>
+              <td><strong>新商品「i-NEXT」研修実施</strong><br><span style="font-size:11px;color:var(--gray-500);">製品知識習得・デモ実施テスト合格</span></td>
+              <td>2/15</td><td>3/31</td><td>全136店</td>
+              <td>72%</td>
+              <td><div class="progress-bar" style="width:150px;"><div class="progress-fill" style="width:72%;background:var(--primary);"></div></div></td>
+              <td><span class="badge badge-info">対応中</span></td>
+            </tr>
+            <tr>
+              <td><strong>顧客データベース更新</strong><br><span style="font-size:11px;color:var(--gray-500);">既存顧客情報の最新化・連絡先確認</span></td>
+              <td>2/1</td><td>3/15</td><td>全136店</td>
+              <td>38%</td>
+              <td><div class="progress-bar" style="width:150px;"><div class="progress-fill" style="width:38%;background:var(--danger);"></div></div></td>
+              <td><span class="badge badge-danger">遅延</span></td>
+            </tr>
+            <tr>
+              <td><strong>年度末棚卸し報告</strong><br><span style="font-size:11px;color:var(--gray-500);">在庫数量確認・報告書提出</span></td>
+              <td>3/10</td><td>3/25</td><td>全136店</td>
+              <td>45%</td>
+              <td><div class="progress-bar" style="width:150px;"><div class="progress-fill" style="width:45%;background:var(--warning);"></div></div></td>
+              <td><span class="badge badge-warning">要促進</span></td>
+            </tr>
+            <tr>
+              <td><strong>安全施工マニュアル改訂版の周知</strong><br><span style="font-size:11px;color:var(--gray-500);">改訂ポイント理解・署名提出</span></td>
+              <td>3/5</td><td>3/20</td><td>全136店</td>
+              <td>65%</td>
+              <td><div class="progress-bar" style="width:150px;"><div class="progress-fill" style="width:65%;background:var(--primary);"></div></div></td>
+              <td><span class="badge badge-info">対応中</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><div class="card-title">エリア別 遵守率</div></div>
+          <table>
+            <thead><tr><th>エリア</th><th>担当者</th><th>遵守率</th><th>未対応</th></tr></thead>
+            <tbody>
+              <tr><td>関東</td><td>田中 太郎</td><td><span class="badge badge-success">95%</span></td><td>2件</td></tr>
+              <tr><td>中部・関西</td><td>佐藤 花子</td><td><span class="badge badge-success">92%</span></td><td>3件</td></tr>
+              <tr><td>中国・四国・九州</td><td>山田 美紀</td><td><span class="badge badge-warning">82%</span></td><td>7件</td></tr>
+              <tr><td>北海道・東北</td><td>鈴木 一郎</td><td><span class="badge badge-warning">78%</span></td><td>9件</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">遅延が多い指示トップ3</div></div>
+          <div class="issue-card critical">
+            <div class="issue-title">顧客データベース更新（38%完了）</div>
+            <div class="issue-meta">期限超過 / 特に北海道・東北で遅延顕著。ITリテラシー課題か。</div>
+          </div>
+          <div class="issue-card warning">
+            <div class="issue-title">年度末棚卸し報告（45%完了）</div>
+            <div class="issue-meta">期限3/25まで8日。ペース的に間に合わない可能性。</div>
+          </div>
+          <div class="issue-card warning">
+            <div class="issue-title">安全施工マニュアル周知（65%完了）</div>
+            <div class="issue-meta">期限3/20まで3日。九州・四国エリアで遅れ目立つ。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== Issues ========== -->
+    <div class="page" id="page-issues">
+      <div class="tabs">
+        <div class="tab active">全課題</div>
+        <div class="tab">後継者問題</div>
+        <div class="tab">高齢化</div>
+        <div class="tab">人材不足</div>
+        <div class="tab">売上低迷</div>
+        <div class="tab">納期遅延</div>
+      </div>
+
+      <div class="ai-panel">
+        <div class="ai-panel-header">🤖 AI リスク分析</div>
+        <div class="ai-insight">全136代理店のうち、<strong>23店（17%）</strong>で代表者が65歳以上。うち<strong>8店</strong>で明確な後継候補が未定です。3年以内の事業継続リスクが高い代理店として5店を特定しました。</div>
+        <div class="ai-insight">過去6ヶ月の売上トレンドから、<strong>仙台SH</strong>と<strong>広島SH</strong>が下降傾向にあります。主要顧客の離脱と人材不足が主因と推定されます。</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">代理店 課題管理台帳</div></div>
+        <table>
+          <thead>
+            <tr><th>重要度</th><th>代理店</th><th>課題カテゴリ</th><th>詳細</th><th>影響度</th><th>対応状況</th><th>担当</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-danger">緊急</span></td>
+              <td><strong>熊本SH</strong></td>
+              <td>後継者問題</td>
+              <td>代表72歳、後継者未定。地域での信頼厚いが事業継続リスク高。</td>
+              <td>🔴 高</td>
+              <td><span class="badge badge-warning">調査中</span></td>
+              <td>山田</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-danger">緊急</span></td>
+              <td><strong>札幌SH</strong></td>
+              <td>納期遅延</td>
+              <td>プロジェクトX-42が計画比15%遅延。顧客クレームのリスク。</td>
+              <td>🔴 高</td>
+              <td><span class="badge badge-warning">対策中</span></td>
+              <td>鈴木</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-warning">重要</span></td>
+              <td><strong>仙台SH</strong></td>
+              <td>売上低迷</td>
+              <td>3ヶ月連続前年比マイナス。主要顧客A社のコンペ敗退が影響。</td>
+              <td>🟡 中</td>
+              <td><span class="badge badge-warning">対策中</span></td>
+              <td>鈴木</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-warning">重要</span></td>
+              <td><strong>広島SH</strong></td>
+              <td>人材不足</td>
+              <td>技術者2名が3月末退職予定。施工案件の受注制限が必要になる可能性。</td>
+              <td>🟡 中</td>
+              <td><span class="badge badge-info">計画中</span></td>
+              <td>山田</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-info">注意</span></td>
+              <td><strong>金沢SH</strong></td>
+              <td>高齢化</td>
+              <td>代表61歳、技術者の平均年齢57歳。中期的な人材育成が課題。</td>
+              <td>🟡 中</td>
+              <td><span class="badge badge-info">モニタリング</span></td>
+              <td>佐藤</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-info">注意</span></td>
+              <td><strong>松山SH</strong></td>
+              <td>後継者問題</td>
+              <td>代表68歳、息子が別業種。事業承継の意思確認が必要。</td>
+              <td>🟡 中</td>
+              <td><span class="badge badge-info">モニタリング</span></td>
+              <td>山田</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-info">注意</span></td>
+              <td><strong>山形SH</strong></td>
+              <td>売上低迷</td>
+              <td>地域の建設需要減少により新規受注が鈍化。</td>
+              <td>🟢 低</td>
+              <td><span class="badge badge-info">モニタリング</span></td>
+              <td>鈴木</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><div class="card-title">後継者リスクマップ</div></div>
+          <table>
+            <thead><tr><th>代理店</th><th>代表年齢</th><th>後継候補</th><th>リスク</th></tr></thead>
+            <tbody>
+              <tr><td>熊本SH</td><td>72歳</td><td>❌ 未定</td><td><span class="badge badge-danger">極高</span></td></tr>
+              <tr><td>松山SH</td><td>68歳</td><td>❌ 未定</td><td><span class="badge badge-danger">高</span></td></tr>
+              <tr><td>鳥取SH</td><td>67歳</td><td>⚠️ 候補あり（未確定）</td><td><span class="badge badge-warning">中</span></td></tr>
+              <tr><td>金沢SH</td><td>61歳</td><td>✅ 副社長</td><td><span class="badge badge-info">低</span></td></tr>
+              <tr><td>札幌SH</td><td>58歳</td><td>✅ 専務</td><td><span class="badge badge-info">低</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">課題カテゴリ別 件数</div></div>
+          <div style="padding:20px 0;">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+              <span style="width:80px;font-size:12px;">後継者問題</span>
+              <div class="progress-bar" style="flex:1;height:20px;"><div class="progress-fill" style="width:35%;background:var(--danger);border-radius:4px;line-height:20px;text-align:center;color:#fff;font-size:11px;">8店</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+              <span style="width:80px;font-size:12px;">高齢化</span>
+              <div class="progress-bar" style="flex:1;height:20px;"><div class="progress-fill" style="width:50%;background:var(--warning);border-radius:4px;line-height:20px;text-align:center;color:#fff;font-size:11px;">23店</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+              <span style="width:80px;font-size:12px;">人材不足</span>
+              <div class="progress-bar" style="flex:1;height:20px;"><div class="progress-fill" style="width:25%;background:var(--primary);border-radius:4px;line-height:20px;text-align:center;color:#fff;font-size:11px;">12店</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+              <span style="width:80px;font-size:12px;">売上低迷</span>
+              <div class="progress-bar" style="flex:1;height:20px;"><div class="progress-fill" style="width:15%;background:#6366f1;border-radius:4px;line-height:20px;text-align:center;color:#fff;font-size:11px;">7店</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span style="width:80px;font-size:12px;">納期遅延</span>
+              <div class="progress-bar" style="flex:1;height:20px;"><div class="progress-fill" style="width:8%;background:#ec4899;border-radius:4px;line-height:20px;text-align:center;color:#fff;font-size:11px;">3店</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== Alerts ========== -->
+    <div class="page" id="page-alerts">
+      <div class="card">
+        <div class="card-header"><div class="card-title">アラート一覧</div><span class="badge badge-danger">5件の未対応</span></div>
+        <div style="margin-bottom:16px;">
+          <div class="issue-card critical">
+            <div style="display:flex;justify-content:space-between;align-items:start;">
+              <div>
+                <div class="issue-title">🔴 【緊急】札幌SH プロジェクトX-42 納期遅延リスク</div>
+                <div class="issue-meta">検知: 2026/3/16 17:45 | AI自動検知 | 担当: 鈴木</div>
+                <div style="margin-top:8px;font-size:13px;">進捗データの分析により、計画比15%の遅延を検知。現在のペースでは納期に2週間の遅れが発生する見込み。顧客への事前説明と工程見直しを推奨します。</div>
+              </div>
+              <button class="btn btn-primary" style="flex-shrink:0;">対応開始</button>
+            </div>
+          </div>
+          <div class="issue-card critical">
+            <div style="display:flex;justify-content:space-between;align-items:start;">
+              <div>
+                <div class="issue-title">🔴 【緊急】顧客DB更新 期限超過</div>
+                <div class="issue-meta">検知: 2026/3/16 09:00 | 期限管理 | 全エリア</div>
+                <div style="margin-top:8px;font-size:13px;">期限3/15を経過し、完了率38%。特に北海道・東北エリアで20%未満。営業担当者からのフォローアップを要請。</div>
+              </div>
+              <button class="btn btn-primary" style="flex-shrink:0;">対応開始</button>
+            </div>
+          </div>
+          <div class="issue-card warning">
+            <div style="display:flex;justify-content:space-between;align-items:start;">
+              <div>
+                <div class="issue-title">🟡 仙台SH 売上 3ヶ月連続マイナス</div>
+                <div class="issue-meta">検知: 2026/3/15 | 売上トレンド分析 | 担当: 鈴木</div>
+                <div style="margin-top:8px;font-size:13px;">12月: -5%、1月: -8%、2月: -12%と下降トレンド。主要顧客A社との取引縮小が主因と推定。訪問ヒアリングを推奨。</div>
+              </div>
+              <button class="btn btn-outline" style="flex-shrink:0;">確認済み</button>
+            </div>
+          </div>
+          <div class="issue-card warning">
+            <div style="display:flex;justify-content:space-between;align-items:start;">
+              <div>
+                <div class="issue-title">🟡 広島SH 技術者退職予定（2名）</div>
+                <div class="issue-meta">検知: 2026/3/14 | 人材情報 | 担当: 山田</div>
+                <div style="margin-top:8px;font-size:13px;">3月末で技術者2名が退職予定。4月以降の施工能力が30%低下する見込み。近隣SHからの応援体制構築を検討。</div>
+              </div>
+              <button class="btn btn-outline" style="flex-shrink:0;">確認済み</button>
+            </div>
+          </div>
+          <div class="issue-card info">
+            <div style="display:flex;justify-content:space-between;align-items:start;">
+              <div>
+                <div class="issue-title">🔵 安全施工マニュアル周知 期限迫る</div>
+                <div class="issue-meta">検知: 2026/3/17 | 期限管理 | 全エリア</div>
+                <div style="margin-top:8px;font-size:13px;">期限3/20まで3日。現在65%完了。九州・四国エリアの完了率が40%と低い。山田担当への督促を推奨。</div>
+              </div>
+              <button class="btn btn-outline" style="flex-shrink:0;">確認済み</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== AI Analysis ========== -->
+    <div class="page" id="page-ai">
+      <div class="ai-panel" style="background:linear-gradient(135deg,#ede9fe 0%,#e0e7ff 100%);border-color:#a5b4fc;">
+        <div class="ai-panel-header" style="color:#4f46e5;">🤖 AI分析エンジン — 統合レポート</div>
+        <p style="font-size:13px;color:var(--gray-700);margin-bottom:12px;">直近のデータを基に、AI が自動分析した結果をお伝えします。各インサイトは信頼度スコア付きです。</p>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><div class="card-title">📈 売上予測（来月）</div></div>
+          <div style="text-align:center;padding:20px;">
+            <div style="font-size:36px;font-weight:700;color:var(--primary);">¥3.12億</div>
+            <div style="font-size:13px;color:var(--gray-500);margin-top:4px;">予測信頼度: 87%</div>
+            <div style="margin-top:12px;font-size:13px;">
+              前月比 <strong style="color:var(--success);">+9.8%</strong> の見込み。<br>
+              横浜SHの大型案件（¥4,500万）の納品が貢献。<br>
+              仙台SHの下降トレンドは継続する可能性が高い。
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">⚠️ リスクスコアリング</div></div>
+          <table>
+            <thead><tr><th>代理店</th><th>リスクスコア</th><th>主要因</th></tr></thead>
+            <tbody>
+              <tr><td>熊本SH</td><td><span style="color:var(--danger);font-weight:700;">92/100</span></td><td>後継者×高齢化</td></tr>
+              <tr><td>札幌SH</td><td><span style="color:var(--danger);font-weight:700;">78/100</span></td><td>納期遅延</td></tr>
+              <tr><td>仙台SH</td><td><span style="color:var(--warning);font-weight:700;">65/100</span></td><td>売上下降</td></tr>
+              <tr><td>広島SH</td><td><span style="color:var(--warning);font-weight:700;">58/100</span></td><td>人材流出</td></tr>
+              <tr><td>松山SH</td><td><span style="color:var(--warning);font-weight:700;">52/100</span></td><td>後継者不在</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">🎯 AI推奨アクション</div></div>
+        <table>
+          <thead><tr><th>優先度</th><th>推奨アクション</th><th>対象</th><th>期待効果</th><th>実行</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-danger">最優先</span></td>
+              <td><strong>熊本SH 事業承継ミーティング設定</strong><br><span style="font-size:11px;color:var(--gray-500);">代表・本部・地域金融機関の三者面談を提案</span></td>
+              <td>山田 → 熊本SH</td>
+              <td>事業継続リスクの低減</td>
+              <td><button class="btn btn-primary" style="font-size:11px;padding:4px 10px;">承認</button></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-danger">最優先</span></td>
+              <td><strong>札幌SH 工程見直し支援</strong><br><span style="font-size:11px;color:var(--gray-500);">本部技術チームの応援派遣を検討</span></td>
+              <td>鈴木 → 札幌SH</td>
+              <td>納期遅延の回避</td>
+              <td><button class="btn btn-primary" style="font-size:11px;padding:4px 10px;">承認</button></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-warning">重要</span></td>
+              <td><strong>仙台SH 新規顧客開拓支援</strong><br><span style="font-size:11px;color:var(--gray-500);">本部マーケティングと連携した地域キャンペーン</span></td>
+              <td>鈴木 → 仙台SH</td>
+              <td>売上回復 +15%目標</td>
+              <td><button class="btn btn-outline" style="font-size:11px;padding:4px 10px;">検討</button></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-warning">重要</span></td>
+              <td><strong>広島SH 人材採用支援</strong><br><span style="font-size:11px;color:var(--gray-500);">本部HR連携で求人活動・近隣SHからの技術者派遣</span></td>
+              <td>山田 → 広島SH</td>
+              <td>施工能力維持</td>
+              <td><button class="btn btn-outline" style="font-size:11px;padding:4px 10px;">検討</button></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-info">推奨</span></td>
+              <td><strong>顧客DB更新の簡易ツール導入</strong><br><span style="font-size:11px;color:var(--gray-500);">ITリテラシーの低い代理店向けにスマホ対応フォーム</span></td>
+              <td>全エリア</td>
+              <td>DB更新率 +40%改善</td>
+              <td><button class="btn btn-outline" style="font-size:11px;padding:4px 10px;">検討</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">📊 営業効率分析</div></div>
+        <div class="grid-2" style="gap:16px;">
+          <div>
+            <h4 style="font-size:13px;margin-bottom:8px;">担当者別 費用対効果</h4>
+            <table>
+              <thead><tr><th>担当者</th><th>訪問数</th><th>売上貢献</th><th>効率スコア</th></tr></thead>
+              <tbody>
+                <tr><td>田中</td><td>14回</td><td>¥9,100万</td><td><span style="color:var(--success);font-weight:600;">A+</span></td></tr>
+                <tr><td>佐藤</td><td>12回</td><td>¥8,900万</td><td><span style="color:var(--success);font-weight:600;">A+</span></td></tr>
+                <tr><td>鈴木</td><td>9回</td><td>¥6,100万</td><td><span style="color:var(--primary);font-weight:600;">B+</span></td></tr>
+                <tr><td>山田</td><td>7回</td><td>¥4,700万</td><td><span style="color:var(--primary);font-weight:600;">B</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <h4 style="font-size:13px;margin-bottom:8px;">改善提案</h4>
+            <div class="ai-insight">鈴木担当の北海道・東北エリアは訪問効率に改善余地あり。オンライン面談の併用で移動時間を削減し、訪問頻度を上げることを推奨。</div>
+            <div class="ai-insight">山田担当のエリアが広範囲（中国・四国・九州）。担当エリアの見直しまたは増員を検討すべき。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Dealer Detail Modal -->
+<div class="modal-overlay" id="dealerModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">&times;</button>
+    <div id="dealerModalContent"></div>
+  </div>
+</div>
+
+<script>
+// Navigation
+function showPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
+  document.getElementById('page-' + pageId).classList.add('active');
+  event.target.closest('.sidebar-item')?.classList.add('active');
+}
+
+// Tabs
+function switchTab(el, tabId) {
+  el.parentElement.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// Modal
+function openDealer(dealerId) {
+  const dealers = {
+    sapporo: {
+      name: '札幌セキュリティハウス',
+      area: '北海道', rep: '北野 一郎', age: 58, successor: '専務 北野 次郎',
+      sales: '¥2,800万', salesTrend: '-3%', employees: 15,
+      status: '<span class="badge badge-danger">要対応</span>',
+      issues: `
+        <div class="issue-card critical">
+          <div class="issue-title">プロジェクトX-42 納期遅延</div>
+          <div class="issue-meta">計画比15%遅延 / 原因: 部材調達の遅れ＋人手不足<br>
+          顧客: 〇〇ビルディング様 / 契約金額: ¥4,200万<br>
+          対策: 本部技術チーム2名の応援派遣を検討中</div>
+        </div>`,
+      activities: `
+        <div class="timeline">
+          <div class="timeline-item visit"><div class="timeline-time">3/16 15:00</div><div class="timeline-content">鈴木が電話 — X-42進捗確認・対策協議</div></div>
+          <div class="timeline-item visit"><div class="timeline-time">3/12 10:00</div><div class="timeline-content">鈴木が訪問 — 現場視察・工程確認</div></div>
+          <div class="timeline-item report"><div class="timeline-time">3/8 16:00</div><div class="timeline-content">月次報告書提出</div></div>
+        </div>`
+    },
+    kumamoto: {
+      name: '熊本セキュリティハウス',
+      area: '九州', rep: '田村 義男', age: 72, successor: '❌ 未定',
+      sales: '¥1,200万', salesTrend: '+1%', employees: 8,
+      status: '<span class="badge badge-danger">要対応</span>',
+      issues: `
+        <div class="issue-card critical">
+          <div class="issue-title">後継者問題 — 事業継続リスク</div>
+          <div class="issue-meta">代表72歳、体力面の不安を本人も認識<br>
+          子息は東京で別業種に従事、承継意思なし<br>
+          従業員の中に候補なし / 地域での信頼は厚い<br>
+          <strong>AI推奨:</strong> M&A仲介または本部主導の後継者マッチングプログラム活用</div>
+        </div>
+        <div class="issue-card warning">
+          <div class="issue-title">従業員の高齢化</div>
+          <div class="issue-meta">8名中5名が55歳以上 / 若手採用が進まず</div>
+        </div>`,
+      activities: `
+        <div class="timeline">
+          <div class="timeline-item visit"><div class="timeline-time">3/10 13:00</div><div class="timeline-content">山田が訪問 — 代表と事業継続について面談</div></div>
+          <div class="timeline-item report"><div class="timeline-time">3/5 15:00</div><div class="timeline-content">課題レポート提出（後継者問題）</div></div>
+          <div class="timeline-item visit"><div class="timeline-time">2/20 10:00</div><div class="timeline-content">山田が訪問 — 春季キャンペーン説明</div></div>
+        </div>`
+    }
+  };
+
+  const d = dealers[dealerId];
+  if (!d) return;
+
+  document.getElementById('dealerModalContent').innerHTML = `
+    <h2 style="font-size:18px;margin-bottom:4px;">${d.name}</h2>
+    <div style="font-size:13px;color:var(--gray-500);margin-bottom:20px;">${d.area}エリア ｜ ${d.status}</div>
+
+    <div class="grid-2" style="margin-bottom:16px;">
+      <div>
+        <table>
+          <tr><td style="color:var(--gray-500);width:100px;">代表者</td><td><strong>${d.rep}</strong>（${d.age}歳）</td></tr>
+          <tr><td style="color:var(--gray-500);">後継者</td><td>${d.successor}</td></tr>
+          <tr><td style="color:var(--gray-500);">従業員数</td><td>${d.employees}名</td></tr>
+          <tr><td style="color:var(--gray-500);">今月売上</td><td><strong>${d.sales}</strong>（前月比 ${d.salesTrend}）</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <h3 style="font-size:14px;margin-bottom:8px;">📋 課題</h3>
+    ${d.issues}
+
+    <h3 style="font-size:14px;margin:16px 0 8px;">📅 直近の活動</h3>
+    ${d.activities}
+  `;
+  document.getElementById('dealerModal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('dealerModal').classList.remove('show');
+}
+
+document.getElementById('dealerModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// Sidebar navigation highlight
+document.querySelectorAll('.sidebar-item').forEach(item => {
+  item.addEventListener('click', function() {
+    document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
